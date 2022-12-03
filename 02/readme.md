@@ -4,6 +4,11 @@ https://adventofcode.com/2022/day/2
 
 PHP Version: 8
 
+## Answers
+
+1. 12458
+2. 12683
+
 ## Codes
 
 - A = rock

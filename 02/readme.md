@@ -10,9 +10,15 @@ PHP Version: 8
 - B = paper
 - C = scissors
 
+### 1
 - X = rock
 - Y = paper
 - Z = scissors
+
+### 2
+- X = lose
+- Y = draw
+- Z = win
 
 ## Scores
 
@@ -26,9 +32,16 @@ PHP Version: 8
 
 calc = result + selection
 
-### e.g.
+### example
 
+#### 1
 - A Y = 8 = Y(2) + won(6)
 - B X = 1 = X(1) + lost(0)
 - C Z = 6 = Z(3) + draw(3)
 - total = 15
+
+#### 2
+- A Y = 4 = Y(A(1)) + draw(3)
+- B X = 1 = X(A(1)) + lost(0)
+- C Z = 7 = Z(A(1)) + won(6)
+- total = 12

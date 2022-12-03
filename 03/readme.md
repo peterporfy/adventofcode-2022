@@ -1,0 +1,5 @@
+## Info
+
+https://adventofcode.com/2022/day/3
+
+Apple Swift version 5.5.2 (swiftlang-1300.0.47.5 clang-1300.0.29.30)

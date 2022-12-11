@@ -108,6 +108,7 @@ interface Operation {
 }
 
 class NoOperation implements Operation {
+
   @Override
   public Integer calculate(Integer old) {
     return old;
@@ -161,10 +162,11 @@ class Monkey {
 
   Integer falseTarget;
 
+  Integer itemsInspected = 0;
 
   @Override
   public String toString() {
-    return "Monkey:" + id + ":" + items;
+    return "Monkey:" + id + ":" + items + " inspections: " + itemsInspected;
   }
 }
 
@@ -215,9 +217,9 @@ class Parser {
         if (next.type == TokenType.Text && next.value.equals("old")) {
           operation = new MultiplyBySelfOperation();
         } else if (next.type == TokenType.Number) {
-          if (operator == "*") {
+          if (operator.equals("*")) {
             operation = new MultiplyWithNumberOperation(Integer.parseInt(next.value));
-          } else if (operator == "+") {
+          } else if (operator.equals("+")) {
             operation = new AddNumberOperation(Integer.parseInt(next.value));
           }
         }
@@ -258,7 +260,118 @@ class Parser {
   }
 }
 
+interface ReliefCalculator {
+  Integer calculate(Integer value);
+}
+
+class Part1ReliefCalculator implements ReliefCalculator {
+  @Override
+  public Integer calculate(Integer value) {
+    return value / 3;
+  }
+}
+
+class Part2ReliefCalculator implements ReliefCalculator {
+  @Override
+  public Integer calculate(Integer value) {
+    return value; // no relief
+  }
+}
+
+class Simulation {
+  ArrayList<Monkey> monkeys;
+
+  Integer rounds;
+
+  ReliefCalculator relief;
+
+  public Simulation(ArrayList<Monkey> monkeys, Integer rounds, ReliefCalculator relief) {
+    this.monkeys = monkeys;
+    this.rounds = rounds;
+    this.relief = relief;
+  }
+
+  public void execute() {
+    for (Integer round = 0; round < rounds; round++) {
+      round();
+    }
+  }
+
+  public Integer levelOfMonkeyBusiness() {
+    Integer top1 = 0;
+    Integer top2 = 0;
+
+    for (Monkey monkey : monkeys) {
+      if (monkey.itemsInspected > top1) {
+        top2 = top1;
+        top1 = monkey.itemsInspected;
+      } else if (monkey.itemsInspected > top2) {
+        top2 = monkey.itemsInspected;
+      }
+    }
+
+    return top1 * top2;
+  }
+
+  private void round() {
+    for (Monkey monkey : monkeys) {
+      turn(monkey);
+    }
+  }
+
+  private void turn(Monkey monkey) {
+    while (monkey.items.size() > 0) {
+      Integer item = monkey.items.remove(0);
+      Integer newItem = relief.calculate(monkey.operation.calculate(item));
+      if (newItem % monkey.testDivision == 0) {
+        passItemTo(monkey.trueTarget, newItem);
+      } else {
+        passItemTo(monkey.falseTarget, newItem);
+      }
+
+      monkey.itemsInspected++;
+    }
+  }
+
+  private void passItemTo(Integer monkeyId, Integer item) {
+    for (Monkey target : monkeys) {
+      if (target.id == monkeyId) {
+        target.items.add(item);
+        break;
+      }
+    }
+  }
+}
+
 class App {
+  private static void Part1(Parser parser) {
+    ArrayList<Monkey> monkeys = parser.parse();
+    Simulation sim = new Simulation(monkeys, 20, new Part1ReliefCalculator());
+
+    sim.execute();
+
+    System.out.println("1: " + sim.levelOfMonkeyBusiness());
+
+    DumpMonkeys(monkeys);
+  }
+
+  private static void Part2(Parser parser) {
+    ArrayList<Monkey> monkeys = parser.parse();
+    Simulation sim = new Simulation(monkeys, 20, new Part2ReliefCalculator());
+
+    sim.execute();
+
+    System.out.println("2: " + sim.levelOfMonkeyBusiness());
+
+    DumpMonkeys(monkeys);
+  }
+
+  private static void DumpMonkeys(ArrayList<Monkey> monkeys) {
+    for (Monkey monkey : monkeys) {
+      System.out.println(monkey);
+    }
+  }
+
   public static void main(String[] args) {
       try {
         String content = Files.readString(Path.of("testdata"));
@@ -266,15 +379,8 @@ class App {
         ArrayList<Token> tokens = tokenizer.tokenize();
         Parser parser = new Parser(tokens);
 
-        ArrayList<Monkey> monkeys = parser.parse();
-        for (Monkey monkey : monkeys) {
-          System.out.println(monkey);
-        }
-        // System.out.println(monkeys.size());
-        // for (Token token : tokens) {
-        //   System.out.println(token);
-        // }
-
+        // Part1(parser);
+        Part2(parser);
       } catch (IOException e) {
         e.printStackTrace();
       }

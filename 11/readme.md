@@ -7,3 +7,6 @@ java (openjdk 17.0.5 2022-10-18)
 `javac -d bin App.java && java -classpath bin App`
 
 ## Answers
+
+1. 61005
+2.

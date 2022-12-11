@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -104,59 +105,59 @@ class Tokenizer {
 }
 
 interface Operation {
-  Integer calculate(Integer old);
+  BigInteger calculate(BigInteger old);
 }
 
 class NoOperation implements Operation {
 
   @Override
-  public Integer calculate(Integer old) {
+  public BigInteger calculate(BigInteger old) {
     return old;
   }
 }
 
 class MultiplyWithNumberOperation implements Operation {
-  Integer multiplyWith;
+  BigInteger multiplyWith;
 
-  public MultiplyWithNumberOperation(Integer multiplyWith) {
+  public MultiplyWithNumberOperation(BigInteger multiplyWith) {
     this.multiplyWith = multiplyWith;
   }
 
   @Override
-  public Integer calculate(Integer old) {
-    return old * multiplyWith;
+  public BigInteger calculate(BigInteger old) {
+    return old.multiply(multiplyWith);
   }
 }
 
 class AddNumberOperation implements Operation {
-  Integer addNumber;
+  BigInteger addNumber;
 
-  public AddNumberOperation(Integer addNumber) {
+  public AddNumberOperation(BigInteger addNumber) {
     this.addNumber = addNumber;
   }
 
   @Override
-  public Integer calculate(Integer old) {
-    return old + addNumber;
+  public BigInteger calculate(BigInteger old) {
+    return old.add(addNumber);
   }
 }
 
 class MultiplyBySelfOperation implements Operation {
 
   @Override
-  public Integer calculate(Integer old) {
-    return old * old;
+  public BigInteger calculate(BigInteger old) {
+    return old.multiply(old);
   }
 }
 
 class Monkey {
   Integer id;
 
-  ArrayList<Integer> items;
+  ArrayList<BigInteger> items;
 
   Operation operation;
 
-  Integer testDivision;
+  BigInteger testDivision;
 
   Integer trueTarget;
 
@@ -177,7 +178,7 @@ class Parser {
     this.tokens = tokens;
   }
 
-  private Integer parseNextInteger(Iterator<Token> iterator) {
+  private Integer parseNextNumber(Iterator<Token> iterator) {
     Integer value = 0;
 
     while (iterator.hasNext()) {
@@ -191,13 +192,13 @@ class Parser {
     return value;
   }
 
-  private ArrayList<Integer> parseNextIntegerList(Iterator<Token> iterator) {
-    ArrayList<Integer> values = new ArrayList<Integer>();
+  private ArrayList<BigInteger> parseNextNumberList(Iterator<Token> iterator) {
+    ArrayList<BigInteger> values = new ArrayList<BigInteger>();
 
     while(iterator.hasNext()) {
       Token next = iterator.next();
 
-      if (next.type == TokenType.Number) values.add(Integer.parseInt(next.value));
+      if (next.type == TokenType.Number) values.add(new BigInteger(next.value));
 
       if (next.type == TokenType.NewLine) break;
     }
@@ -218,9 +219,9 @@ class Parser {
           operation = new MultiplyBySelfOperation();
         } else if (next.type == TokenType.Number) {
           if (operator.equals("*")) {
-            operation = new MultiplyWithNumberOperation(Integer.parseInt(next.value));
+            operation = new MultiplyWithNumberOperation(new BigInteger(next.value));
           } else if (operator.equals("+")) {
-            operation = new AddNumberOperation(Integer.parseInt(next.value));
+            operation = new AddNumberOperation(new BigInteger(next.value));
           }
         }
       }
@@ -234,12 +235,12 @@ class Parser {
   private Monkey parseMonkey(Iterator<Token> iterator) {
     Monkey monkey = new Monkey();
 
-    monkey.id = parseNextInteger(iterator);
-    monkey.items = parseNextIntegerList(iterator);
+    monkey.id = parseNextNumber(iterator);
+    monkey.items = parseNextNumberList(iterator);
     monkey.operation = parseOperation(iterator);
-    monkey.testDivision = parseNextInteger(iterator);
-    monkey.trueTarget = parseNextInteger(iterator);
-    monkey.falseTarget = parseNextInteger(iterator);
+    monkey.testDivision = new BigInteger(parseNextNumber(iterator).toString());
+    monkey.trueTarget = parseNextNumber(iterator);
+    monkey.falseTarget = parseNextNumber(iterator);
 
     return monkey;
   }
@@ -261,19 +262,19 @@ class Parser {
 }
 
 interface ReliefCalculator {
-  Integer calculate(Integer value);
+  BigInteger calculate(BigInteger value);
 }
 
 class Part1ReliefCalculator implements ReliefCalculator {
   @Override
-  public Integer calculate(Integer value) {
-    return value / 3;
+  public BigInteger calculate(BigInteger value) {
+    return value.divide(new BigInteger("3"));
   }
 }
 
 class Part2ReliefCalculator implements ReliefCalculator {
   @Override
-  public Integer calculate(Integer value) {
+  public BigInteger calculate(BigInteger value) {
     return value; // no relief
   }
 }
@@ -293,6 +294,7 @@ class Simulation {
 
   public void execute() {
     for (Integer round = 0; round < rounds; round++) {
+      System.out.println("Round " + round);
       round();
     }
   }
@@ -321,9 +323,9 @@ class Simulation {
 
   private void turn(Monkey monkey) {
     while (monkey.items.size() > 0) {
-      Integer item = monkey.items.remove(0);
-      Integer newItem = relief.calculate(monkey.operation.calculate(item));
-      if (newItem % monkey.testDivision == 0) {
+      BigInteger item = monkey.items.remove(0);
+      BigInteger newItem = relief.calculate(monkey.operation.calculate(item));
+      if (isDivisible(newItem, monkey.testDivision)) {
         passItemTo(monkey.trueTarget, newItem);
       } else {
         passItemTo(monkey.falseTarget, newItem);
@@ -333,7 +335,43 @@ class Simulation {
     }
   }
 
-  private void passItemTo(Integer monkeyId, Integer item) {
+  /**
+   * Assuming all divisible by numbers in data are in the range of the following primes
+   * - 2
+   * - 3
+   * - 5
+   * - 7
+   * - 11
+   * - 13
+   * - 17
+   * - 19
+   * - 23
+   */
+  private Boolean isDivisible(BigInteger a, BigInteger b) {
+    // if (b.equals(new BigInteger("2"))) {
+    //   System.out.println("2");
+    //   return a.getLowestSetBit() != 0;
+    // } else if (b.equals(new BigInteger("3"))) {
+    //   System.out.println("3");
+    //   String val = a.toString();
+    //   Integer sum = 0;
+    //   for (Character c : val.toCharArray()) {
+    //     sum += Integer.parseInt(c.toString());
+    //   }
+
+    //   return sum % 3 == 0;
+    // } else if (b.equals(new BigInteger("5"))) {
+    //   System.out.println("5");
+    //   String val = a.toString();
+    //   Integer last = Integer.parseInt(val.substring(val.length() - 1));
+    //   return last % 5 == 0;
+    // }
+
+    BigInteger result = a.remainder(b);
+    return result.equals(new BigInteger("0"));
+  }
+
+  private void passItemTo(Integer monkeyId, BigInteger item) {
     for (Monkey target : monkeys) {
       if (target.id == monkeyId) {
         target.items.add(item);
@@ -357,7 +395,7 @@ class App {
 
   private static void Part2(Parser parser) {
     ArrayList<Monkey> monkeys = parser.parse();
-    Simulation sim = new Simulation(monkeys, 20, new Part2ReliefCalculator());
+    Simulation sim = new Simulation(monkeys, 10000, new Part2ReliefCalculator());
 
     sim.execute();
 
@@ -374,13 +412,13 @@ class App {
 
   public static void main(String[] args) {
       try {
-        String content = Files.readString(Path.of("testdata"));
+        String content = Files.readString(Path.of("data"));
         Tokenizer tokenizer = new Tokenizer(content);
         ArrayList<Token> tokens = tokenizer.tokenize();
         Parser parser = new Parser(tokens);
 
-        // Part1(parser);
-        Part2(parser);
+        Part1(parser);
+        // Part2(parser);
       } catch (IOException e) {
         e.printStackTrace();
       }

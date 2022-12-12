@@ -1,5 +1,4 @@
 import java.io.IOException;
-import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -105,65 +104,65 @@ class Tokenizer {
 }
 
 interface Operation {
-  BigInteger calculate(BigInteger old);
+  long calculate(long old);
 }
 
 class NoOperation implements Operation {
 
   @Override
-  public BigInteger calculate(BigInteger old) {
+  public long calculate(long old) {
     return old;
   }
 }
 
 class MultiplyWithNumberOperation implements Operation {
-  BigInteger multiplyWith;
+  long multiplyWith;
 
-  public MultiplyWithNumberOperation(BigInteger multiplyWith) {
+  public MultiplyWithNumberOperation(long multiplyWith) {
     this.multiplyWith = multiplyWith;
   }
 
   @Override
-  public BigInteger calculate(BigInteger old) {
-    return old.multiply(multiplyWith);
+  public long calculate(long old) {
+    return old * multiplyWith;
   }
 }
 
 class AddNumberOperation implements Operation {
-  BigInteger addNumber;
+  long addNumber;
 
-  public AddNumberOperation(BigInteger addNumber) {
+  public AddNumberOperation(long addNumber) {
     this.addNumber = addNumber;
   }
 
   @Override
-  public BigInteger calculate(BigInteger old) {
-    return old.add(addNumber);
+  public long calculate(long old) {
+    return old + addNumber;
   }
 }
 
 class MultiplyBySelfOperation implements Operation {
 
   @Override
-  public BigInteger calculate(BigInteger old) {
-    return old.multiply(old);
+  public long calculate(long old) {
+    return old * old;
   }
 }
 
 class Monkey {
-  Integer id;
+  long id;
 
-  ArrayList<BigInteger> items;
+  ArrayList<Long> items;
 
   Operation operation;
 
-  BigInteger testDivision;
+  long testDivision;
 
-  Integer trueTarget;
+  long trueTarget;
 
-  Integer falseTarget;
+  long falseTarget;
 
-  Integer itemsInspected = 0;
+  long itemsInspected = 0;
 
   @Override
   public String toString() {
@@ -178,13 +177,13 @@ class Parser {
     this.tokens = tokens;
   }
 
-  private Integer parseNextNumber(Iterator<Token> iterator) {
-    Integer value = 0;
+  private long parseNextNumber(Iterator<Token> iterator) {
+    long value = 0;
 
     while (iterator.hasNext()) {
       Token next = iterator.next();
 
-      if (next.type == TokenType.Number) value = Integer.parseInt(next.value);
+      if (next.type == TokenType.Number) value = Long.parseLong(next.value);
 
       if (next.type == TokenType.NewLine) break;
     }
@@ -192,13 +191,13 @@ class Parser {
     return value;
   }
 
-  private ArrayList<BigInteger> parseNextNumberList(Iterator<Token> iterator) {
-    ArrayList<BigInteger> values = new ArrayList<BigInteger>();
+  private ArrayList<Long> parseNextNumberList(Iterator<Token> iterator) {
+    ArrayList<Long> values = new ArrayList<Long>();
 
     while(iterator.hasNext()) {
       Token next = iterator.next();
 
-      if (next.type == TokenType.Number) values.add(new BigInteger(next.value));
+      if (next.type == TokenType.Number) values.add(Long.parseLong(next.value));
 
       if (next.type == TokenType.NewLine) break;
     }
@@ -219,9 +218,9 @@ class Parser {
           operation = new MultiplyBySelfOperation();
         } else if (next.type == TokenType.Number) {
           if (operator.equals("*")) {
-            operation = new MultiplyWithNumberOperation(new BigInteger(next.value));
+            operation = new MultiplyWithNumberOperation(Integer.parseInt(next.value));
           } else if (operator.equals("+")) {
-            operation = new AddNumberOperation(new BigInteger(next.value));
+            operation = new AddNumberOperation(Long.parseLong(next.value));
           }
         }
       }
@@ -238,7 +237,7 @@ class Parser {
     monkey.id = parseNextNumber(iterator);
     monkey.items = parseNextNumberList(iterator);
     monkey.operation = parseOperation(iterator);
-    monkey.testDivision = new BigInteger(parseNextNumber(iterator).toString());
+    monkey.testDivision = parseNextNumber(iterator);
     monkey.trueTarget = parseNextNumber(iterator);
     monkey.falseTarget = parseNextNumber(iterator);
 
@@ -262,20 +261,29 @@ class Parser {
 }
 
 interface ReliefCalculator {
-  BigInteger calculate(BigInteger value);
+  Long calculate(Long value);
 }
 
 class Part1ReliefCalculator implements ReliefCalculator {
   @Override
-  public BigInteger calculate(BigInteger value) {
-    return value.divide(new BigInteger("3"));
+  public Long calculate(Long value) {
+    return value / 3;
   }
 }
 
 class Part2ReliefCalculator implements ReliefCalculator {
+  long commonMultiple;
+
+  public Part2ReliefCalculator(ArrayList<Monkey> monkies) {
+    commonMultiple = 1;
+    for (Monkey monkey : monkies) {
+      commonMultiple *= monkey.testDivision;
+    }
+  }
+
   @Override
-  public BigInteger calculate(BigInteger value) {
-    return value; // no relief
+  public Long calculate(Long value) {
+    return value % commonMultiple;
   }
 }
 
@@ -294,14 +302,13 @@ class Simulation {
 
   public void execute() {
     for (Integer round = 0; round < rounds; round++) {
-      System.out.println("Round " + round);
       round();
     }
   }
 
-  public Integer levelOfMonkeyBusiness() {
-    Integer top1 = 0;
-    Integer top2 = 0;
+  public long levelOfMonkeyBusiness() {
+    long top1 = 0;
+    long top2 = 0;
 
     for (Monkey monkey : monkeys) {
       if (monkey.itemsInspected > top1) {
@@ -323,9 +330,10 @@ class Simulation {
 
   private void turn(Monkey monkey) {
     while (monkey.items.size() > 0) {
-      BigInteger item = monkey.items.remove(0);
-      BigInteger newItem = relief.calculate(monkey.operation.calculate(item));
-      if (isDivisible(newItem, monkey.testDivision)) {
+      long item = monkey.items.remove(0);
+      long newItem = relief.calculate(monkey.operation.calculate(item));
+
+      if (newItem % monkey.testDivision == 0) {
         passItemTo(monkey.trueTarget, newItem);
       } else {
         passItemTo(monkey.falseTarget, newItem);
@@ -335,43 +343,7 @@ class Simulation {
     }
   }
 
-  /**
-   * Assuming all divisible by numbers in data are in the range of the following primes
-   * - 2
-   * - 3
-   * - 5
-   * - 7
-   * - 11
-   * - 13
-   * - 17
-   * - 19
-   * - 23
-   */
-  private Boolean isDivisible(BigInteger a, BigInteger b) {
-    // if (b.equals(new BigInteger("2"))) {
-    //   System.out.println("2");
-    //   return a.getLowestSetBit() != 0;
-    // } else if (b.equals(new BigInteger("3"))) {
-    //   System.out.println("3");
-    //   String val = a.toString();
-    //   Integer sum = 0;
-    //   for (Character c : val.toCharArray()) {
-    //     sum += Integer.parseInt(c.toString());
-    //   }
-
-    //   return sum % 3 == 0;
-    // } else if (b.equals(new BigInteger("5"))) {
-    //   System.out.println("5");
-    //   String val = a.toString();
-    //   Integer last = Integer.parseInt(val.substring(val.length() - 1));
-    //   return last % 5 == 0;
-    // }
-
-    BigInteger result = a.remainder(b);
-    return result.equals(new BigInteger("0"));
-  }
-
-  private void passItemTo(Integer monkeyId, BigInteger item) {
+  private void passItemTo(long monkeyId, long item) {
     for (Monkey target : monkeys) {
       if (target.id == monkeyId) {
         target.items.add(item);
@@ -395,7 +367,7 @@ class App {
 
   private static void Part2(Parser parser) {
     ArrayList<Monkey> monkeys = parser.parse();
-    Simulation sim = new Simulation(monkeys, 10000, new Part2ReliefCalculator());
+    Simulation sim = new Simulation(monkeys, 10000, new Part2ReliefCalculator(monkeys));
 
     sim.execute();
 
@@ -405,9 +377,9 @@ class App {
   }
 
   private static void DumpMonkeys(ArrayList<Monkey> monkeys) {
-    for (Monkey monkey : monkeys) {
-      System.out.println(monkey);
-    }
+    // for (Monkey monkey : monkeys) {
+    //   System.out.println(monkey);
+    // }
   }
 
   public static void main(String[] args) {
@@ -418,7 +390,7 @@ class App {
         Parser parser = new Parser(tokens);
 
         Part1(parser);
-        // Part2(parser);
+        Part2(parser);
       } catch (IOException e) {
         e.printStackTrace();
       }

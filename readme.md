@@ -16,7 +16,7 @@ Extra rule this year: use a different language each day.
 9. [TypeScript](09)
 10. [C](10)
 11. [Java](11)
-12. ?
+12. [Lua](12)
 13. ?
 14. ?
 15. ?

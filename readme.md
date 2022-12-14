@@ -17,7 +17,7 @@ Extra rule this year: use a different language each day.
 10. [C](10)
 11. [Java](11)
 12. [Lua](12)
-13. ?
+13. [R](13)
 14. ?
 15. ?
 16. ?

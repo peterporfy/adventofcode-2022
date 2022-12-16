@@ -18,7 +18,7 @@ Extra rule this year: use a different language each day.
 11. [Java](11)
 12. [Lua](12)
 13. [R](13)
-14. ?
+14. [Elm](14)
 15. ?
 16. ?
 17. ?

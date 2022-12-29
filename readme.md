@@ -21,7 +21,7 @@ Extra rule this year: use a different language each day.
 14. [Elm](14)
 15. [Go](15)
 16. [Python](16)
-17. ?
+17. [Scala](17)
 18. ?
 19. ?
 20. ?
